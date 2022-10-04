@@ -22,4 +22,5 @@ private:
 
 private:
     GLFWwindow* mWindow = nullptr;
+    bool mInitialized = false;
 };

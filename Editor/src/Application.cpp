@@ -5,6 +5,10 @@
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+
 Application::~Application()
 {
     Shutdown();
@@ -14,7 +18,7 @@ void Application::Run()
 {
     if (!Init())
     {
-        LOG_ERROR("Failed to init application.");
+        LOG_CRITICAL("Failed to init application.");
         return;
     }
 
@@ -22,6 +26,15 @@ void Application::Run()
     {
         glfwPollEvents();
 
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(mWindow);
     }
 
@@ -30,27 +43,55 @@ void Application::Run()
 
 bool Application::Init()
 {
+    assert(!mInitialized && "Application is already initialized!");
+
     glfwSetErrorCallback(GlfwErrorCallback);
 
-    if (const auto result = glfwInit(); !result)
+    if (!glfwInit())
+    {
+        LOG_CRITICAL("Failed to initialize GLFW!");
         return false;
+    }
 
-    mWindow = glfwCreateWindow(1200, 900, "Simple Fog Editor", nullptr, nullptr);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    mWindow = glfwCreateWindow(1280, 720, "Simple Fog Editor", nullptr, nullptr);
 
     glfwMakeContextCurrent(mWindow);
-    if (const auto result = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress); !result)
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        LOG_CRITICAL("Failed to initialize glad GL loader!");
         return false;
+    }
 
     glfwSwapInterval(1);
+
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
+    ImGui_ImplOpenGL3_Init("#version 460");
+
+    mInitialized = true;
 
     return true;
 }
 
 void Application::Shutdown()
 {
+    if (mInitialized)
+    {
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+    }
+
     glfwTerminate();
 
     mWindow = nullptr;
+    mInitialized = false;
 }
 
 void Application::GlfwErrorCallback(int error, const char* description)
