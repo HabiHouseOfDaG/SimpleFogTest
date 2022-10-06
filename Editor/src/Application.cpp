@@ -9,6 +9,13 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+#include "GLVertexArray.h"
+#include "Shader.h"
+#include "Mesh.h"
+#include "Camera.h"
+
+#include <glm/gtc/matrix_transform.hpp>
+
 Application::~Application()
 {
     Shutdown();
@@ -26,12 +33,30 @@ void Application::Run()
     {
         glfwPollEvents();
 
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        mCamera->OnUpdate(mWindow, 0.0f);
+
+        glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+
+        mVA->Bind();
+
+        mShader->Bind();
+        mShader->SetUniform("u_View", mCamera->GetView());
+        mShader->SetUniform("u_Projection", mCamera->GetProjection());
+
+        for (const auto& cube : mCubes)
+        {
+            mShader->SetUniform("u_Transform", cube.transform);
+            mShader->SetUniform("u_Color", cube.color);
+
+            mVA->Render();
+        }
+
+        mVA->Unbind();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -72,9 +97,21 @@ bool Application::Init()
     ImGui::StyleColorsDark();
 
     ImGui_ImplGlfw_InitForOpenGL(mWindow, true);
-    ImGui_ImplOpenGL3_Init("#version 460");
+    ImGui_ImplOpenGL3_Init("#version 460 core");
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
 
     mInitialized = true;
+
+    mVA = GLVertexArray::Create(Mesh::CreateCube());
+    mShader = Shader::Create("assets/shaders/Fog.vert", "assets/shaders/Fog.frag");
+    if (!mShader)
+        return false;
+
+    mCamera = CreateRef<Camera>(30.0f, 1.788f, 0.1f, 1000.0f);
+
+    CreateScene();
 
     return true;
 }
@@ -90,8 +127,35 @@ void Application::Shutdown()
 
     glfwTerminate();
 
+    mVA = nullptr;
     mWindow = nullptr;
     mInitialized = false;
+}
+
+void Application::CreateScene()
+{
+    mCubes = {
+        Cube {
+            glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5.0f)),
+            glm::vec4 { 1.0f, 0.5f, 0.5f, 1.0f }
+        },
+        Cube {
+            glm::translate(glm::mat4(1.0f), glm::vec3(5.0f, 0.0f, -5.0f)),
+            glm::vec4 { 1.0f, 1.0f, 0.5f, 1.0f }
+        },
+        Cube {
+            glm::translate(glm::mat4(1.0f), glm::vec3(5.0f, 0.0f, 0.0f)),
+            glm::vec4 { 0.5f, 0.5f, 0.5f, 1.0f }
+        },
+        Cube {
+            glm::translate(glm::mat4(1.0f), glm::vec3(10.0f, 0.0f, -15.0f)),
+            glm::vec4 { 1.0f, 1.0f, 0.0f, 1.0f }
+        },
+        Cube {
+            glm::translate(glm::mat4(1.0f), glm::vec3(-10.0f, 0.0f, 15.0f)),
+            glm::vec4 { 1.0f, 0.0f, 0.0f, 1.0f }
+        }
+    };
 }
 
 void Application::GlfwErrorCallback(int error, const char* description)
