@@ -14,6 +14,8 @@ public:
     void Bind();
     void Unbind();
 
+    void SetUniform(const char* const name, const f32 f);
+    void SetUniform(const char* const name, const glm::vec3& v);
     void SetUniform(const char* const name, const glm::vec4& v);
     void SetUniform(const char* const name, const glm::mat4& m);
 

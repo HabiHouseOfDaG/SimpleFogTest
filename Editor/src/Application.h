@@ -26,6 +26,8 @@ private:
 
     void CreateScene();
 
+    void RenderFogAttrsWindow();
+
     static void GlfwErrorCallback(int error, const char* description);
 
 private:
@@ -45,6 +47,9 @@ private:
     Ref<Shader> mShader;
 
     Ref<Camera> mCamera;
+
+    glm::vec3 mFogColor{ 1.0f };
+    f32 mFogIntensity = 0.5f;
 
     GLFWwindow* mWindow = nullptr;
     bool mInitialized = false;

@@ -15,6 +15,7 @@
 #include "Camera.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 Application::~Application()
 {
@@ -35,7 +36,7 @@ void Application::Run()
 
         mCamera->OnUpdate(mWindow, 0.0f);
 
-        glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
+        glClearColor(mFogColor.r, mFogColor.g, mFogColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         ImGui_ImplOpenGL3_NewFrame();
@@ -47,6 +48,8 @@ void Application::Run()
         mShader->Bind();
         mShader->SetUniform("u_View", mCamera->GetView());
         mShader->SetUniform("u_Projection", mCamera->GetProjection());
+        mShader->SetUniform("u_FogColor", mFogColor);
+        mShader->SetUniform("u_FogIntensity", mFogIntensity);
 
         for (const auto& cube : mCubes)
         {
@@ -57,6 +60,8 @@ void Application::Run()
         }
 
         mVA->Unbind();
+
+        RenderFogAttrsWindow();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -156,6 +161,16 @@ void Application::CreateScene()
             glm::vec4 { 1.0f, 0.0f, 0.0f, 1.0f }
         }
     };
+}
+
+void Application::RenderFogAttrsWindow()
+{
+    ImGui::Begin("Fog Attributes");
+
+    ImGui::ColorPicker3("Fog Color", glm::value_ptr(mFogColor));
+    ImGui::DragFloat("Fog Intensity", &mFogIntensity, 0.01f, 0.0f, 1.0f);
+
+    ImGui::End();
 }
 
 void Application::GlfwErrorCallback(int error, const char* description)

@@ -7,8 +7,10 @@ uniform mat4 u_Transform;
 uniform mat4 u_View;
 uniform mat4 u_Projection;
 
+out vec4 vPos;
+
 void main()
 {
-	vec4 vertPos = u_View * u_Transform * vec4(a_Position, 1.0f);
-	gl_Position = u_Projection * vertPos;
+	vPos = u_View * u_Transform * vec4(a_Position, 1.0f);
+	gl_Position = u_Projection * vPos;
 }
